@@ -45,7 +45,7 @@ public class KinesisBinderConfigurationProperties {
 
 	private boolean autoCreateStream = true;
 
-	private boolean autoAddShards = false;
+	private boolean autoAddShards;
 
 	private int minShardCount = 1;
 

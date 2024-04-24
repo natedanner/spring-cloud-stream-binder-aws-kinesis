@@ -90,11 +90,11 @@ public class KinesisBinderTests extends
 
 	private static final String CLASS_UNDER_TEST_NAME = KinesisBinderTests.class.getSimpleName();
 
-	private static KinesisAsyncClient AMAZON_KINESIS;
+	private static KinesisAsyncClient amazonKinesis;
 
-	private static DynamoDbAsyncClient DYNAMO_DB;
+	private static DynamoDbAsyncClient dynamoDb;
 
-	private static CloudWatchAsyncClient CLOUD_WATCH;
+	private static CloudWatchAsyncClient cloudWatch;
 
 
 	public KinesisBinderTests() {
@@ -103,9 +103,9 @@ public class KinesisBinderTests extends
 
 	@BeforeAll
 	public static void setup() {
-		AMAZON_KINESIS = LocalstackContainerTest.kinesisClient();
-		DYNAMO_DB = LocalstackContainerTest.dynamoDbClient();
-		CLOUD_WATCH = LocalstackContainerTest.cloudWatchClient();
+		amazonKinesis = LocalstackContainerTest.kinesisClient();
+		dynamoDb = LocalstackContainerTest.dynamoDbClient();
+		cloudWatch = LocalstackContainerTest.cloudWatchClient();
 	}
 
 	@Test
@@ -132,7 +132,7 @@ public class KinesisBinderTests extends
 		binding.unbind();
 
 		DescribeStreamResponse streamResult =
-				AMAZON_KINESIS.describeStream(request -> request.streamName(testStreamName))
+				amazonKinesis.describeStream(request -> request.streamName(testStreamName))
 						.join();
 		String createdStreamName = streamResult.streamDescription().streamName();
 		int createdShards = streamResult.streamDescription().shards().size();
@@ -241,7 +241,7 @@ public class KinesisBinderTests extends
 		KinesisAsyncClient amazonKinesisMock = mock(KinesisAsyncClient.class);
 		BDDMockito
 				.given(amazonKinesisMock.putRecord(any(PutRecordRequest.class)))
-				.willAnswer((invocation) -> {
+				.willAnswer(invocation -> {
 					PutRecordRequest request = invocation.getArgument(0);
 					sent.set(request.data());
 					return CompletableFuture.failedFuture(putRecordException);
@@ -265,7 +265,7 @@ public class KinesisBinderTests extends
 		SubscribableChannel ec = applicationContext.getBean(errorChannelName, SubscribableChannel.class);
 		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();
 		final CountDownLatch latch = new CountDownLatch(1);
-		ec.subscribe((message) -> {
+		ec.subscribe(message -> {
 			errorMessage.set(message);
 			latch.countDown();
 		});
@@ -313,9 +313,8 @@ public class KinesisBinderTests extends
 		assertThat(receivedMessage).isNotNull();
 		assertThat(receivedMessage.getPayload().size()).isEqualTo(3);
 
-		receivedMessage.getPayload().forEach((r) -> {
-			assertThat(r).isInstanceOf(Record.class);
-		});
+		receivedMessage.getPayload().forEach(r ->
+			assertThat(r).isInstanceOf(Record.class));
 
 		outputBinding.unbind();
 		inputBinding.unbind();
@@ -395,7 +394,7 @@ public class KinesisBinderTests extends
 
 		String stream = "existing" + System.currentTimeMillis();
 
-		AMAZON_KINESIS.createStream(request -> request.streamName(stream).shardCount(2)).join();
+		amazonKinesis.createStream(request -> request.streamName(stream).shardCount(2)).join();
 
 		List<Shard> shards = describeStream(stream);
 
@@ -416,9 +415,9 @@ public class KinesisBinderTests extends
 	}
 
 	private List<Shard> describeStream(String stream) {
-		return AMAZON_KINESIS.describeStream(request -> request.streamName(stream))
+		return amazonKinesis.describeStream(request -> request.streamName(stream))
 				.thenCompose(reply ->
-						AMAZON_KINESIS.waiter().waitUntilStreamExists(request -> request.streamName(stream)))
+						amazonKinesis.waiter().waitUntilStreamExists(request -> request.streamName(stream)))
 				.join()
 				.matched()
 				.response()
@@ -445,7 +444,7 @@ public class KinesisBinderTests extends
 	private KinesisTestBinder getBinder(
 			KinesisBinderConfigurationProperties kinesisBinderConfigurationProperties) {
 		if (this.testBinder == null) {
-			this.testBinder = new KinesisTestBinder(AMAZON_KINESIS, DYNAMO_DB, CLOUD_WATCH,
+			this.testBinder = new KinesisTestBinder(amazonKinesis, dynamoDb, cloudWatch,
 					kinesisBinderConfigurationProperties);
 			this.timeoutMultiplier = 20;
 		}

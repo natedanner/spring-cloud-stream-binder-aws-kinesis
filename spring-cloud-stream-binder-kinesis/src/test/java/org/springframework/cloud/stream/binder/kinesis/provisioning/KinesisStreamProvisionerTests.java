@@ -46,16 +46,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class KinesisStreamProvisionerTests implements LocalstackContainerTest {
 
-	private static KinesisAsyncClient AMAZON_KINESIS;
+	private static KinesisAsyncClient amazonKinesis;
 
 	@BeforeAll
 	static void setup() {
-		AMAZON_KINESIS = LocalstackContainerTest.kinesisClient();
+		amazonKinesis = LocalstackContainerTest.kinesisClient();
 	}
 
 	private void createStream(String streamName) {
-		AMAZON_KINESIS.createStream(request -> request.streamName(streamName).shardCount(1))
-				.thenCompose(reply -> AMAZON_KINESIS.waiter()
+		amazonKinesis.createStream(request -> request.streamName(streamName).shardCount(1))
+				.thenCompose(reply -> amazonKinesis.waiter()
 						.waitUntilStreamExists(request -> request.streamName(streamName),
 								waiter -> waiter
 										.maxAttempts(60)
@@ -69,7 +69,7 @@ class KinesisStreamProvisionerTests implements LocalstackContainerTest {
 		createStream(streamName);
 
 		KinesisBinderConfigurationProperties binderProperties = new KinesisBinderConfigurationProperties();
-		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(AMAZON_KINESIS, binderProperties);
+		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(amazonKinesis, binderProperties);
 		ExtendedProducerProperties<KinesisProducerProperties> extendedProducerProperties =
 				new ExtendedProducerProperties<>(new KinesisProducerProperties());
 
@@ -87,7 +87,7 @@ class KinesisStreamProvisionerTests implements LocalstackContainerTest {
 		createStream(streamName);
 
 		KinesisBinderConfigurationProperties binderProperties = new KinesisBinderConfigurationProperties();
-		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(AMAZON_KINESIS, binderProperties);
+		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(amazonKinesis, binderProperties);
 
 		ExtendedConsumerProperties<KinesisConsumerProperties> extendedConsumerProperties =
 				new ExtendedConsumerProperties<>(new KinesisConsumerProperties());
@@ -110,7 +110,7 @@ class KinesisStreamProvisionerTests implements LocalstackContainerTest {
 		int targetShardCount = 2;
 		binderProperties.setMinShardCount(targetShardCount);
 		binderProperties.setAutoAddShards(true);
-		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(AMAZON_KINESIS, binderProperties);
+		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(amazonKinesis, binderProperties);
 
 		ExtendedConsumerProperties<KinesisConsumerProperties> extendedConsumerProperties =
 				new ExtendedConsumerProperties<>(new KinesisConsumerProperties());
@@ -128,7 +128,7 @@ class KinesisStreamProvisionerTests implements LocalstackContainerTest {
 	void testProvisionProducerSuccessfulWithNewStream() {
 		String streamName = "provisioning4";
 		KinesisBinderConfigurationProperties binderProperties = new KinesisBinderConfigurationProperties();
-		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(AMAZON_KINESIS, binderProperties);
+		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(amazonKinesis, binderProperties);
 		ExtendedProducerProperties<KinesisProducerProperties> extendedProducerProperties =
 				new ExtendedProducerProperties<>(new KinesisProducerProperties());
 
@@ -144,7 +144,7 @@ class KinesisStreamProvisionerTests implements LocalstackContainerTest {
 	void testProvisionConsumerResourceNotFoundException() {
 		KinesisBinderConfigurationProperties binderProperties = new KinesisBinderConfigurationProperties();
 		binderProperties.setAutoCreateStream(false);
-		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(AMAZON_KINESIS, binderProperties);
+		KinesisStreamProvisioner provisioner = new KinesisStreamProvisioner(amazonKinesis, binderProperties);
 		int instanceCount = 1;
 		int concurrency = 1;
 
